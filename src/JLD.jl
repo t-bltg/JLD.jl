@@ -176,14 +176,9 @@ function jldopen(filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Boo
             # We're truncating, so we don't have to check the format of an existing file
             # Set the user block to 512 bytes, to save room for the header
             fcpl = HDF5.FileCreateProperties()
-            local f
-            try
-                fcpl.userblock = 512
-                f = HDF5.API.h5f_create(filename, HDF5.API.H5F_ACC_TRUNC, fcpl, fapl)
-            finally
-                close(fcpl)
-            end
-            fj = JldFile(HDF5.File(f, filename, false), version, true, true, mmaparrays, compatible, compress)
+            fcpl.userblock = 512
+            f = HDF5.API.h5f_create(filename, HDF5.API.H5F_ACC_TRUNC, fcpl, fapl)
+            fj = JldFile(HDF5.File(f, filename, fcpl, false), version, true, true, mmaparrays, compatible, compress)
             # Record creator information. Don't use any fancy types here,
             # because we want to be able to read this even when formats change.
             write(fj, _joinpath(pathcreator, "JULIA_MAJOR"), VERSION.major)
@@ -217,7 +212,7 @@ function jldopen(filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Boo
                     fj = JLD00.jldopen(filename, rd, wr, cr, tr, ff; mmaparrays=mmaparrays)
                 else
                     f = HDF5.API.h5f_open(filename, wr ? HDF5.API.H5F_ACC_RDWR : HDF5.API.H5F_ACC_RDONLY, fapl)
-                    fj = JldFile(HDF5.File(f, filename, false), version, true, cr|wr, mmaparrays, compatible, compress)
+                    fj = JldFile(HDF5.File(f, filename, HDF5.FileCreateProperties(), false), version, true, cr|wr, mmaparrays, compatible, compress)
                     # Load any required files/packages
                     if haskey(fj, pathrequire)
                         r = read(fj, pathrequire)

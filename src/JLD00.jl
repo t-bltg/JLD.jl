@@ -102,14 +102,9 @@ function jldopen(filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Boo
             # We're truncating, so we don't have to check the format of an existing file
             # Set the user block to 512 bytes, to save room for the header
             fcpl = HDF5.FileCreateProperties()
-            local f
-            try
-                fcpl.userblock = 512
-                f = HDF5.API.h5f_create(filename, HDF5.API.H5F_ACC_TRUNC, fcpl, fapl)
-            finally
-                close(fcpl)
-            end
-            fj = JldFile(HDF5.File(f, filename), version, true, true, mmaparrays)
+            fcpl.userblock = 512
+            f = HDF5.API.h5f_create(filename, HDF5.API.H5F_ACC_TRUNC, fcpl, fapl)
+            fj = JldFile(HDF5.File(f, filename, fcpl), version, true, true, mmaparrays)
             # initialize empty require list
             write(fj, pathrequire, String[])
         else
